@@ -9,9 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.converter.RsaKeyConverters;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
@@ -25,8 +28,17 @@ public class JwtConfig {
         this.jwtProperties = jwtProperties;
     }
 
+    /**
+     * {@code jwt.private-key} (raw PEM content, e.g. from a JWT_PRIVATE_KEY env var) wins over
+     * {@code jwt.private-key-location} when set - the private key is gitignored and won't exist
+     * in any built image/container, so cloud deploys need to inject it as an env var rather than
+     * a file on the classpath.
+     */
     @Bean
     public RSAPrivateKey rsaPrivateKey() throws IOException {
+        if (StringUtils.hasText(jwtProperties.privateKey())) {
+            return RsaKeyConverters.pkcs8().convert(pemContentStream(jwtProperties.privateKey()));
+        }
         try (InputStream in = jwtProperties.privateKeyLocation().getInputStream()) {
             return RsaKeyConverters.pkcs8().convert(in);
         }
@@ -34,9 +46,19 @@ public class JwtConfig {
 
     @Bean
     public RSAPublicKey rsaPublicKey() throws IOException {
+        if (StringUtils.hasText(jwtProperties.publicKey())) {
+            return RsaKeyConverters.x509().convert(pemContentStream(jwtProperties.publicKey()));
+        }
         try (InputStream in = jwtProperties.publicKeyLocation().getInputStream()) {
             return RsaKeyConverters.x509().convert(in);
         }
+    }
+
+    private static InputStream pemContentStream(String pemContent) {
+        // Tolerates a literal "\n"-escaped single-line value (common when pasting a multi-line
+        // secret into a UI that doesn't preserve real newlines), alongside real newlines.
+        String normalized = pemContent.replace("\\n", "\n");
+        return new ByteArrayInputStream(normalized.getBytes(StandardCharsets.UTF_8));
     }
 
     @Bean

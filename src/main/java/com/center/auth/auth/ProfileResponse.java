@@ -7,8 +7,6 @@ public record ProfileResponse(
         String email,
         String firstName,
         String lastName,
-        String profilePhotoUrl,
-        String coverPhotoUrl,
         String bio,
         boolean emailVerified,
         String status,

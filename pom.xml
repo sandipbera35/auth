@@ -76,6 +76,17 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
+		<!-- Pinned below 9.x: minio 9.x pulls in OkHttp 5.x, whose "okhttp" Maven
+		     artifact is a Kotlin-Multiplatform metadata stub with no JVM classes
+		     (the real classes live in "okhttp-jvm", which plain Maven won't
+		     auto-select the way Gradle does). 8.5.14 depends on OkHttp 4.12.0,
+		     a normal single-artifact jar, and has the same Args/Response API. -->
+		<dependency>
+			<groupId>io.minio</groupId>
+			<artifactId>minio</artifactId>
+			<version>8.5.14</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

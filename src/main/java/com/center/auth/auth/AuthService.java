@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -126,6 +127,12 @@ public class AuthService {
     public ProfileResponse getProfile(Jwt jwt) {
         User user = requireActiveUser(jwt);
         return toProfileResponse(user);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ProfileResponse> listUsers(Jwt jwt) {
+        requireActiveUser(jwt);
+        return userRepository.findAll().stream().map(this::toProfileResponse).toList();
     }
 
     public ProfileResponse updateProfile(Jwt jwt, UpdateProfileRequest request) {

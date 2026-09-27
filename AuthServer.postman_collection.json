@@ -335,6 +335,30 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "List Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseurl}}/api/auth/users",
+              "host": [
+                "{{baseurl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "users"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

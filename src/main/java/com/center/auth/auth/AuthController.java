@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -113,6 +115,11 @@ public class AuthController {
     public ResponseEntity<StreamingResponseBody> streamUserCover(@AuthenticationPrincipal Jwt jwt,
                                                                   @PathVariable Long id) {
         return streamImage(authService.getUserCover(jwt, id));
+    }
+
+    @GetMapping("/users")
+    public List<ProfileResponse> listUsers(@AuthenticationPrincipal Jwt jwt) {
+        return authService.listUsers(jwt);
     }
 
     private ResponseEntity<StreamingResponseBody> streamImage(StoredObject image) {

@@ -1,0 +1,182 @@
+{
+  "info": {
+    "_postman_id": "0d424254-4bee-4950-8c58-272a3fd08294",
+    "name": "AuthServer",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "31158988",
+    "_collection_link": "https://go.postman.co/collection/31158988-0d424254-4bee-4950-8c58-272a3fd08294?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register New User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\n{\n  \"email\": \"alice@example.com\",\n  \"password\": \"supersecret123\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Doe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/auth/register",
+              "host": [
+                "{{baseurl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GetProfile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseurl}}/api/auth/profile",
+              "host": [
+                "{{baseurl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upldate Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Sandip\",\n  \"lastName\": \"Bera\",\n  \"profilePhotoUrl\": \"https://example.com/images/profile.jpg\",\n  \"coverPhotoUrl\": \"https://example.com/images/cover.jpg\",\n  \"bio\": \"Backend engineer building an OAuth2/OIDC authorization server.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/auth/profile",
+              "host": [
+                "{{baseurl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "LogIn(GetToken)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const response = pm.response.json();\npm.collectionVariables.set('TOKEN', response.accessToken);\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"supersecret123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseurl}}/api/auth/login",
+          "host": [
+            "{{baseurl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "TOKEN",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMDA4ZjliMWUtMjViNS00OGU5LTgyYjMtYzI2ZGQ5MzM3MTRmIiwiZmlyc3RfbmFtZSI6IlNhbmRpcCIsImxhc3RfbmFtZSI6IkJlcmEiLCJnZW5kZXIiOiJNYWxlIiwiYmlydGhfZGF0ZSI6IjE5OTMtMDItMjYgMDU6MzA6MDAgKzA1MzAgSVNUIiwidXNlcl9uYW1lIjoic2FuZGlwYmVyYTEyIiwibW9iaWxlX25vIjoiODE1ODgwMjM5MiIsImVtYWlsX2lkIjoic2FuZGlwYmVyYTM1QG91dGxvb2suY29tIiwiZXhwIjoxNzIxNjczMjk5LCJpYXQiOjE3MjE2Njk2OTl9.qx-8siouY4z-umP6g3Vre-OpCDPvSv_7ZJG0XJOMgwM"
+    },
+    {
+      "key": "baseurl",
+      "value": "localhost:8080"
+    }
+  ]
+}

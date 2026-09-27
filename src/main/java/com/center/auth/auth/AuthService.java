@@ -1,5 +1,6 @@
 package com.center.auth.auth;
 
+import com.center.auth.role.Role;
 import com.center.auth.security.InvalidTokenException;
 import com.center.auth.security.JwtProperties;
 import com.center.auth.security.TokenService;
@@ -13,6 +14,8 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -78,6 +81,67 @@ public class AuthService {
         }
 
         return issueTokens(user);
+    }
+
+    public ProfileResponse getProfile(Jwt jwt) {
+        User user = requireActiveUser(jwt);
+        return toProfileResponse(user);
+    }
+
+    public ProfileResponse updateProfile(Jwt jwt, UpdateProfileRequest request) {
+        User user = requireActiveUser(jwt);
+
+        if (request.firstName() != null) {
+            user.setFirstName(request.firstName());
+        }
+        if (request.lastName() != null) {
+            user.setLastName(request.lastName());
+        }
+        if (request.profilePhotoUrl() != null) {
+            user.setProfilePhotoUrl(request.profilePhotoUrl());
+        }
+        if (request.coverPhotoUrl() != null) {
+            user.setCoverPhotoUrl(request.coverPhotoUrl());
+        }
+        if (request.bio() != null) {
+            user.setBio(request.bio());
+        }
+
+        return toProfileResponse(user);
+    }
+
+    private User requireActiveUser(Jwt jwt) {
+        try {
+            tokenService.requireAccessToken(jwt);
+        } catch (InvalidTokenException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired access token");
+        }
+
+        Long userId = Long.valueOf(jwt.getSubject());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User no longer exists"));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is not active");
+        }
+
+        return user;
+    }
+
+    private ProfileResponse toProfileResponse(User user) {
+        List<String> roles = user.getRoles().stream().map(Role::getName).toList();
+        return new ProfileResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getProfilePhotoUrl(),
+                user.getCoverPhotoUrl(),
+                user.getBio(),
+                user.isEmailVerified(),
+                user.getStatus().name(),
+                roles
+        );
     }
 
     private AuthResponse issueTokens(User user) {

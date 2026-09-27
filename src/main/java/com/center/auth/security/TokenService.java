@@ -49,6 +49,12 @@ public class TokenService {
         return jwt;
     }
 
+    public void requireAccessToken(Jwt jwt) {
+        if (!TOKEN_TYPE_ACCESS.equals(jwt.getClaimAsString(CLAIM_TOKEN_TYPE))) {
+            throw new InvalidTokenException("Provided token is not an access token");
+        }
+    }
+
     private String generateToken(User user, String tokenType, Duration ttl) {
         Instant now = Instant.now();
         List<String> roles = user.getRoles().stream().map(Role::getName).toList();

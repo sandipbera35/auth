@@ -7,7 +7,9 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.converter.RsaKeyConverters;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.util.StringUtils;
 
@@ -69,5 +71,18 @@ public class JwtConfig {
                 .build();
         JWKSource<SecurityContext> jwkSource = (selector, context) -> selector.select(new JWKSet(rsaKey));
         return new NimbusJwtEncoder(jwkSource);
+    }
+
+    /**
+     * Built from the same {@code rsaPublicKey()} bean the encoder uses - not Spring Boot's
+     * autoconfigured JwtDecoder (driven by spring.security.oauth2.resourceserver.jwt.public-key-location,
+     * which only reads a location, never raw content) - so verification always matches whichever
+     * public key was actually used to sign, regardless of whether it came from JWT_PUBLIC_KEY or
+     * the classpath file. This is what makes rotating to a real (non-dev, non-committed) key pair
+     * in production possible via env vars alone.
+     */
+    @Bean
+    public JwtDecoder jwtDecoder(RSAPublicKey publicKey) {
+        return NimbusJwtDecoder.withPublicKey(publicKey).build();
     }
 }

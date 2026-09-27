@@ -1,6 +1,7 @@
 package com.center.auth.auth;
 
 import com.center.auth.role.Role;
+import com.center.auth.role.RoleRepository;
 import com.center.auth.security.InvalidTokenException;
 import com.center.auth.security.JwtProperties;
 import com.center.auth.security.TokenService;
@@ -45,8 +46,10 @@ public class AuthService {
 
     private static final String PHOTO_PLACEHOLDER = "placeholders/profile-photo.png";
     private static final String COVER_PLACEHOLDER = "placeholders/cover-photo.png";
+    private static final String DEFAULT_ROLE = "USER";
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final JwtProperties jwtProperties;
@@ -54,12 +57,14 @@ public class AuthService {
     private final DataSize maxUploadSize;
 
     public AuthService(UserRepository userRepository,
+                        RoleRepository roleRepository,
                         PasswordEncoder passwordEncoder,
                         TokenService tokenService,
                         JwtProperties jwtProperties,
                         StorageService storageService,
                         @Value("${spring.servlet.multipart.max-file-size}") DataSize maxUploadSize) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
         this.jwtProperties = jwtProperties;
@@ -72,10 +77,14 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
         }
 
+        Role defaultRole = roleRepository.findByName(DEFAULT_ROLE)
+                .orElseThrow(() -> new IllegalStateException("Default role '" + DEFAULT_ROLE + "' is not seeded"));
+
         User user = new User(request.email(), passwordEncoder.encode(request.password()));
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setStatus(UserStatus.ACTIVE);
+        user.getRoles().add(defaultRole);
 
         user = userRepository.save(user);
         return new RegisterResponse(user.getId(), user.getEmail(), user.getStatus().name());

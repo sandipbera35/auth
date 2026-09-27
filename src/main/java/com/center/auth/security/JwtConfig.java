@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 import java.util.UUID;
 
 @Configuration
@@ -57,9 +58,19 @@ public class JwtConfig {
     }
 
     private static InputStream pemContentStream(String pemContent) {
-        // Tolerates a literal "\n"-escaped single-line value (common when pasting a multi-line
-        // secret into a UI that doesn't preserve real newlines), alongside real newlines.
-        String normalized = pemContent.replace("\\n", "\n");
+        String trimmed = pemContent.trim();
+        String normalized;
+        if (trimmed.contains("-----BEGIN")) {
+            // Real PEM text. Tolerates a literal "\n"-escaped single-line value (common when
+            // pasting a multi-line secret into a UI that doesn't preserve real newlines),
+            // alongside real newlines.
+            normalized = trimmed.replace("\\n", "\n");
+        } else {
+            // Base64 of the whole PEM file (headers included) as one unbroken line - the most
+            // copy/paste-proof way to inject a multi-line secret into a single env var value,
+            // since there are no newlines to be dropped or mangled in transit.
+            normalized = new String(Base64.getDecoder().decode(trimmed), StandardCharsets.UTF_8);
+        }
         return new ByteArrayInputStream(normalized.getBytes(StandardCharsets.UTF_8));
     }
 

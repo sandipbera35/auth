@@ -3,6 +3,7 @@ package com.center.auth.auth;
 import com.center.auth.storage.StoredObject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -118,8 +119,45 @@ public class AuthController {
     }
 
     @GetMapping("/users")
-    public List<ProfileResponse> listUsers(@AuthenticationPrincipal Jwt jwt) {
-        return authService.listUsers(jwt);
+    public PagedResponse<ProfileResponse> listUsers(@AuthenticationPrincipal Jwt jwt,
+                                                      @RequestParam(required = false) String status,
+                                                      @RequestParam(required = false) String role,
+                                                      @RequestParam(required = false)
+                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedFrom,
+                                                      @RequestParam(required = false)
+                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedTo,
+                                                      @RequestParam(defaultValue = "0") int page,
+                                                      @RequestParam(defaultValue = "20") int size) {
+        return authService.listUsers(jwt, status, role, joinedFrom, joinedTo, page, size);
+    }
+
+    @GetMapping("/dashboard")
+    public DashboardStatsResponse dashboard(@AuthenticationPrincipal Jwt jwt,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedFrom,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedTo) {
+        return authService.getDashboardStats(jwt, joinedFrom, joinedTo);
+    }
+
+    @PostMapping("/users/{id}/moderator")
+    public ProfileResponse promoteToModerator(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return authService.promoteToModerator(jwt, id);
+    }
+
+    @DeleteMapping("/users/{id}/moderator")
+    public ProfileResponse removeModerator(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return authService.removeModerator(jwt, id);
+    }
+
+    @PostMapping("/users/{id}/block")
+    public ProfileResponse blockUser(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return authService.blockUser(jwt, id);
+    }
+
+    @PostMapping("/users/{id}/unblock")
+    public ProfileResponse unblockUser(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return authService.unblockUser(jwt, id);
     }
 
     private ResponseEntity<StreamingResponseBody> streamImage(StoredObject image) {

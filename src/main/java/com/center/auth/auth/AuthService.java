@@ -10,9 +10,15 @@ import com.center.auth.storage.StoredObject;
 import com.center.auth.user.User;
 import com.center.auth.user.UserRepository;
 import com.center.auth.user.UserStatus;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +32,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -48,6 +58,8 @@ public class AuthService {
     private static final String PHOTO_PLACEHOLDER = "placeholders/profile-photo.png";
     private static final String COVER_PLACEHOLDER = "placeholders/cover-photo.png";
     private static final String DEFAULT_ROLE = "USER";
+    private static final String ADMIN_ROLE = "ADMIN";
+    private static final String MODERATOR_ROLE = "MODERATOR";
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -130,9 +142,148 @@ public class AuthService {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ProfileResponse> listUsers(Jwt jwt) {
+    public PagedResponse<ProfileResponse> listUsers(Jwt jwt, String status, String role,
+                                                      LocalDate joinedFrom, LocalDate joinedTo,
+                                                      int page, int size) {
         requireActiveUser(jwt);
-        return userRepository.findAll().stream().map(this::toProfileResponse).toList();
+        validateDateRange(joinedFrom, joinedTo);
+        UserStatus statusFilter = parseStatusFilter(status);
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<User> result = userRepository.findAll(buildUserFilter(statusFilter, role, joinedFrom, joinedTo), pageable);
+
+        return new PagedResponse<>(
+                result.getContent().stream().map(this::toProfileResponse).toList(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public DashboardStatsResponse getDashboardStats(Jwt jwt, LocalDate joinedFrom, LocalDate joinedTo) {
+        requireActiveUser(jwt);
+        validateDateRange(joinedFrom, joinedTo);
+
+        long total = userRepository.count();
+        long active = userRepository.countByStatus(UserStatus.ACTIVE);
+        long inactive = userRepository.countByStatus(UserStatus.INACTIVE);
+        long blocked = userRepository.countByStatus(UserStatus.BLOCKED);
+        long admins = userRepository.countByRolesName(ADMIN_ROLE);
+
+        Long joinedInRange = null;
+        if (joinedFrom != null || joinedTo != null) {
+            Instant from = joinedFrom != null ? startOfDayUtc(joinedFrom) : Instant.EPOCH;
+            Instant to = joinedTo != null ? startOfDayUtc(joinedTo.plusDays(1)) : Instant.now();
+            joinedInRange = userRepository.countByCreatedAtBetween(from, to);
+        }
+
+        return new DashboardStatsResponse(total, active, inactive, blocked, admins, joinedInRange);
+    }
+
+    private static UserStatus parseStatusFilter(String status) {
+        if (status == null || status.isBlank() || status.equalsIgnoreCase("ALL")) {
+            return null;
+        }
+        try {
+            return UserStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status filter: " + status);
+        }
+    }
+
+    private static void validateDateRange(LocalDate from, LocalDate to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "joinedFrom must not be after joinedTo");
+        }
+    }
+
+    private static Instant startOfDayUtc(LocalDate date) {
+        return date.atStartOfDay(ZoneOffset.UTC).toInstant();
+    }
+
+    private static Specification<User> buildUserFilter(UserStatus status, String role,
+                                                         LocalDate joinedFrom, LocalDate joinedTo) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (role != null && !role.isBlank()) {
+                query.distinct(true);
+                predicates.add(cb.equal(cb.upper(root.join("roles").get("name")), role.toUpperCase()));
+            }
+            if (joinedFrom != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), startOfDayUtc(joinedFrom)));
+            }
+            if (joinedTo != null) {
+                predicates.add(cb.lessThan(root.get("createdAt"), startOfDayUtc(joinedTo.plusDays(1))));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public ProfileResponse promoteToModerator(Jwt jwt, Long userId) {
+        requireActiveUser(jwt);
+        User target = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        Role moderatorRole = roleRepository.findByName(MODERATOR_ROLE)
+                .orElseThrow(() -> new IllegalStateException("Role '" + MODERATOR_ROLE + "' is not seeded"));
+        target.getRoles().add(moderatorRole);
+
+        return toProfileResponse(target);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public ProfileResponse removeModerator(Jwt jwt, Long userId) {
+        requireActiveUser(jwt);
+        User target = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        target.getRoles().removeIf(r -> r.getName().equals(MODERATOR_ROLE));
+
+        return toProfileResponse(target);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ProfileResponse blockUser(Jwt jwt, Long userId) {
+        User caller = requireActiveUser(jwt);
+        User target = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (target.getId().equals(caller.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot block your own account");
+        }
+        if (hasRole(target, ADMIN_ROLE)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot block an administrator");
+        }
+
+        target.setStatus(UserStatus.BLOCKED);
+        return toProfileResponse(target);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ProfileResponse unblockUser(Jwt jwt, Long userId) {
+        requireActiveUser(jwt);
+        User target = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (target.getStatus() == UserStatus.BLOCKED) {
+            target.setStatus(UserStatus.ACTIVE);
+        }
+        return toProfileResponse(target);
+    }
+
+    private static boolean hasRole(User user, String roleName) {
+        return user.getRoles().stream().anyMatch(role -> role.getName().equals(roleName));
     }
 
     public ProfileResponse updateProfile(Jwt jwt, UpdateProfileRequest request) {

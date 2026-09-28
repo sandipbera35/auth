@@ -1,15 +1,240 @@
 {
   "info": {
-    "_postman_id": "0d424254-4bee-4950-8c58-272a3fd08294",
+    "_postman_id": "e2494d07-aa91-4e39-82d7-3594d69f407c",
     "name": "AuthServer",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "31158988",
-    "_collection_link": "https://go.postman.co/collection/31158988-0d424254-4bee-4950-8c58-272a3fd08294?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/31158988-e2494d07-aa91-4e39-82d7-3594d69f407c?source=collection_link"
   },
   "item": [
     {
       "name": "Auth",
       "item": [
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Promote To Moderator (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{TOKEN}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseurl}}/api/auth/users/:id/moderator",
+                  "host": [
+                    "{{baseurl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "users",
+                    ":id",
+                    "moderator"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Remove Moderator (Admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{TOKEN}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseurl}}/api/auth/users/:id/moderator",
+                  "host": [
+                    "{{baseurl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "users",
+                    ":id",
+                    "moderator"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Block User (Admin/Moderator)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{TOKEN}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseurl}}/api/auth/users/:id/block",
+                  "host": [
+                    "{{baseurl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "users",
+                    ":id",
+                    "block"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Unblock User (Admin/Moderator)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{TOKEN}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseurl}}/api/auth/users/:id/unblock",
+                  "host": [
+                    "{{baseurl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "users",
+                    ":id",
+                    "unblock"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Users (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{TOKEN}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseurl}}/api/auth/users?status=ACTIVE&role=ADMIN&joinedFrom=2026-01-01&joinedTo=2026-12-31&page=0&size=20",
+                  "host": [
+                    "{{baseurl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "ACTIVE",
+                      "disabled": true,
+                      "description": "ACTIVE | INACTIVE | BLOCKED | SUSPENDED | PENDING_VERIFICATION | ALL (omit or ALL = no filter)"
+                    },
+                    {
+                      "key": "role",
+                      "value": "ADMIN",
+                      "disabled": true,
+                      "description": "e.g. ADMIN, MODERATOR, USER"
+                    },
+                    {
+                      "key": "joinedFrom",
+                      "value": "2026-01-01",
+                      "disabled": true
+                    },
+                    {
+                      "key": "joinedTo",
+                      "value": "2026-12-31",
+                      "disabled": true
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Dashboard (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{TOKEN}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseurl}}/api/auth/dashboard?joinedFrom=2026-01-01&joinedTo=2026-12-31",
+                  "host": [
+                    "{{baseurl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "dashboard"
+                  ],
+                  "query": [
+                    {
+                      "key": "joinedFrom",
+                      "value": "2026-01-01",
+                      "disabled": true
+                    },
+                    {
+                      "key": "joinedTo",
+                      "value": "2026-12-31",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
         {
           "name": "Register New User",
           "request": {
@@ -116,7 +341,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": null
+                  "value": null
                 }
               ]
             },
@@ -151,7 +376,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": null
+                  "value": null
                 }
               ]
             },
@@ -337,25 +562,12 @@
           "response": []
         },
         {
-          "name": "List Users (Admin)",
+          "name": "New Request",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{TOKEN}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseurl}}/api/auth/users",
-              "host": [
-                "{{baseurl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "users"
-              ]
+              "raw": ""
             }
           },
           "response": []
@@ -370,7 +582,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const response = pm.response.json();\npm.collectionVariables.set('TOKEN', response.accessToken);\n"
+              "const response = pm.response.json();\npm.collectionVariables.set('TOKEN', response.accessToken);\npm.collectionVariables.set('REFRESH_TOKEN', response.refreshToken);\n"
             ]
           }
         }
@@ -383,7 +595,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"supersecret123\"\n}",
+          "raw": "{\n  \"email\": \"admin@localhost.com\",\n  \"password\": \"admin\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -399,6 +611,48 @@
             "api",
             "auth",
             "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Refresh Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const response = pm.response.json();\npm.collectionVariables.set('TOKEN', response.accessToken);\npm.collectionVariables.set('REFRESH_TOKEN', response.refreshToken);\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{REFRESH_TOKEN}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseurl}}/api/auth/refresh",
+          "host": [
+            "{{baseurl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "refresh"
           ]
         }
       },
@@ -436,7 +690,16 @@
     },
     {
       "key": "baseurl",
-      "value": "localhost:8080"
+      "value": "https://center.sandipbera.in",
+      "disabled": true
+    },
+    {
+      "key": "REFRESH_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "baseurl",
+      "value": ""
     }
   ]
 }
